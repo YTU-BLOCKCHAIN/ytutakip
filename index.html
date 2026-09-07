@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YK Takip — YTÜ Blockchain Topluluğu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eceae5;
+    --kanban-bg:#faf9f7;
+    --card:#ffffff;
+    --border:#dedad3;
+    --border-soft:#e3e0da;
+    --divider:#eceae5;
+    --text:#1a1917;
+    --text-dim:#3f3c37;
+    --text-muted:#57544d;
+    --text-faint:#6b6862;
+    --text-mono:#63605a;
+    --will:#c0392b;       --will-soft:#d98a80;     --will-label:#8f2c20;
+    --progress:#c98a06;   --progress-soft:#e8b83c; --progress-label:#8a5f04;
+    --done:#2e7d4f;       --done-soft:#4aa172;     --done-label:#1f5c39;
+    --danger-border:#e0c9c5;
+    --danger-bg:#fbf1ef;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;background:var(--bg);}
+  body{
+    color:var(--text);font-family:"Instrument Sans",Helvetica,Arial,sans-serif;
+    font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace;}
+  button{font-family:inherit;cursor:pointer;}
+  input,textarea,select{font-family:inherit;font-size:inherit;color:var(--text);}
+  a{color:inherit;}
+
+  #errbar{
+    position:sticky;top:0;z-index:50;background:var(--danger-bg);color:var(--will-label);
+    border-bottom:1px solid var(--danger-border);padding:10px 20px;font-size:13px;font-weight:600;
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+  }
+  #errbar button{background:none;border:none;color:inherit;font-weight:700;font-size:15px;padding:0 4px;}
+
+  #app{max-width:1180px;margin:0 auto;padding:28px 20px 64px;}
+
+  /* ---------- login / unassigned ---------- */
+  .center-screen{min-height:78vh;display:flex;align-items:center;justify-content:center;}
+  .center-card{width:100%;max-width:404px;display:flex;flex-direction:column;align-items:center;text-align:center;}
+  .mark{
+    width:64px;height:64px;border-radius:16px;background:var(--text);color:var(--card);
+    display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;letter-spacing:-.02em;
+  }
+  .center-card h1{margin:22px 0 0;font-size:34px;font-weight:700;letter-spacing:-.02em;color:var(--text);}
+  .center-card p{margin:10px 0 0;font-size:15px;line-height:1.55;color:var(--text-muted);}
+  .glogin{
+    margin-top:28px;width:100%;height:52px;display:flex;align-items:center;justify-content:center;gap:12px;
+    background:var(--card);border:1px solid #cfcbc3;border-radius:10px;font-size:15px;font-weight:600;
+    color:var(--text);box-shadow:0 1px 2px rgba(26,25,23,.06);
+  }
+  .glogin:hover{background:#faf9f7;border-color:#a9a49b;}
+  .glogin svg{width:19px;height:19px;flex:none;}
+  .caption{margin-top:16px;font-size:12px;color:var(--text-mono);}
+  .mailtag{display:inline-block;background:var(--kanban-bg);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:13px;margin:6px 0 4px;color:var(--text);}
+  .linkbtn{background:none;border:none;color:var(--text-faint);font-size:12px;text-decoration:underline;cursor:pointer;margin-top:18px;}
+
+  /* ---------- top bar ---------- */
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;gap:24px;
+    padding:14px 20px;background:var(--card);border:1px solid var(--border);border-radius:14px 14px 0 0;
+  }
+  .brand{display:flex;align-items:center;gap:12px;min-width:0;}
+  .brand .mark{width:34px;height:34px;border-radius:9px;font-size:13px;flex:none;}
+  .brand-text{display:flex;flex-direction:column;min-width:0;}
+  .brand-text .title{font-size:15px;font-weight:700;color:var(--text);letter-spacing:-.01em;white-space:nowrap;}
+  .brand-text .org{font-size:12px;color:var(--text-faint);white-space:nowrap;}
+  .rolepill{margin-left:6px;padding:4px 9px;border-radius:999px;background:var(--kanban-bg);border:1px solid var(--border);font-size:11px;color:var(--text-dim);flex:none;}
+  .whoami{display:flex;align-items:center;gap:14px;flex:none;}
+  .whoami .email{font-size:13px;color:var(--text-dim);}
+  .whoami button{height:34px;padding:0 14px;background:var(--card);border:1px solid #cfcbc3;border-radius:8px;font-size:13px;font-weight:600;color:var(--text);}
+  .whoami button:hover{background:#f2f0ec;border-color:#a9a49b;}
+
+  /* ---------- tabs ---------- */
+  .tabs{display:flex;gap:4px;padding:0 20px;background:var(--card);border:1px solid var(--border);border-top:none;}
+  .tabs button{
+    padding:12px 4px 10px;margin-right:20px;background:none;border:none;border-bottom:2px solid transparent;
+    font-size:14px;font-weight:500;color:var(--text-faint);
+  }
+  .tabs button.active{font-weight:600;color:var(--text);border-bottom-color:var(--text);}
+
+  .panelbody{padding:24px;display:flex;flex-direction:column;gap:24px;background:var(--card);border:1px solid var(--border);border-top:none;border-radius:0 0 14px 14px;}
+  .panelbody.notabs{border-radius:0 0 14px 14px;}
+  .soloheader{border-radius:0 0 14px 14px;}
+  .topbar.solo{border-radius:14px 14px 0 0;}
+
+  /* ---------- summary cards ---------- */
+  .summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;}
+  @media (max-width:820px){.summary{grid-template-columns:repeat(2,1fr);}}
+  .team-card{
+    text-align:left;background:var(--card);border:1px solid var(--border);border-top:3px solid var(--tc);
+    border-radius:10px;padding:14px 16px 16px;
+  }
+  .team-card.active{border-color:var(--tc);box-shadow:0 0 0 3px color-mix(in srgb, var(--tc) 12%, transparent);}
+  .team-card .tname{font-size:14px;font-weight:700;color:var(--text);}
+  .team-card .tcount{margin-top:6px;font-size:12px;color:var(--text-muted);}
+  .bar{margin-top:12px;display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--bg);}
+  .bar i{display:block;height:100%;}
+  .team-card .tstate{margin-top:8px;font-size:12px;color:var(--text-faint);}
+  .team-card.active .tstate{font-weight:600;color:var(--tc);}
+
+  /* ---------- board ---------- */
+  .board{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+  .board-head{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--divider);}
+  .board-head .dot-sq{width:10px;height:10px;border-radius:3px;background:var(--tc);flex:none;}
+  .board-head .name{font-size:16px;font-weight:700;color:var(--text);letter-spacing:-.01em;}
+  .board-head .meta{margin-left:auto;font-size:12px;color:var(--text-faint);}
+
+  .kanban{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;padding:18px;background:var(--kanban-bg);}
+  @media (max-width:900px){.kanban{grid-template-columns:1fr;}}
+  .col{display:flex;flex-direction:column;gap:10px;}
+  .col-head{display:flex;align-items:center;gap:8px;padding-bottom:8px;border-bottom:2px solid var(--sc);}
+  .col-head .dot{width:9px;height:9px;border-radius:999px;background:var(--sc);flex:none;}
+  .col-head .clabel{font-size:13px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:var(--scl);}
+  .col-head .ccount{margin-left:auto;font-size:12px;color:var(--text-muted);}
+
+  .card{background:var(--card);border:1px solid var(--border-soft);border-radius:10px;padding:12px;cursor:grab;user-select:none;}
+  .card.dragging{opacity:.45;}
+  .card .ctitle{font-size:14px;font-weight:600;line-height:1.35;color:var(--text);}
+  .card.done .ctitle{color:var(--text-dim);}
+  .card .cdesc{margin:7px 0 0;font-size:13px;line-height:1.5;color:var(--text-muted);white-space:pre-wrap;}
+  .card .crow-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+  .card .cassignee{margin-top:10px;display:inline-flex;align-items:center;padding:3px 8px;border-radius:999px;font-size:12px;font-weight:600;background:var(--tcs-bg);border:1px solid var(--tcs-border);color:var(--tcs-text);}
+  .card .crow-bottom{margin-top:12px;display:flex;align-items:center;gap:10px;padding-top:10px;border-top:1px solid var(--divider);}
+  .card .meta{font-size:11px;color:var(--text-mono);}
+
+  .col-body{display:flex;flex-direction:column;gap:10px;min-height:48px;border-radius:8px;transition:background .12s;}
+  .col-body.dragover{background:#f2f0ec;outline:2px dashed var(--sc);outline-offset:-2px;}
+  .del{flex:none;height:24px;padding:0 8px;background:var(--card);border:1px solid var(--danger-border);border-radius:6px;font-size:12px;font-weight:600;color:var(--will-label);}
+  .del:hover{background:var(--danger-bg);border-color:var(--will);}
+
+  .empty-col{border:1px dashed var(--border);border-radius:10px;padding:14px 10px;text-align:center;color:var(--text-faint);font-size:12px;background:var(--card);}
+
+  .addbtn{height:40px;background:var(--card);border:1px dashed #b6b1a8;border-radius:10px;font-size:13px;font-weight:600;color:var(--text-dim);}
+  .addbtn:hover{background:#f2f0ec;border-color:#8a857c;}
+
+  .addform{background:var(--card);border:1px solid #cfcbc3;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;}
+  .addform .flabel{font-size:13px;font-weight:700;color:var(--text);}
+  .addform input, .addform textarea{height:36px;padding:0 10px;border:1px solid #cfcbc3;border-radius:7px;font-size:13px;background:var(--card);width:100%;}
+  .addform textarea{height:auto;padding:8px 10px;resize:vertical;font-family:inherit;}
+  .addform .fbtns{display:flex;gap:8px;margin-top:2px;}
+  .btn{border:none;border-radius:7px;padding:0 14px;height:34px;font-size:13px;font-weight:600;}
+  .btn.primary{background:var(--text);color:var(--card);}
+  .btn.primary:hover{background:#332f2b;}
+  .btn.primary:disabled{opacity:.6;}
+  .btn.ghost{background:var(--card);border:1px solid #cfcbc3;color:var(--text-dim);}
+  .btn.ghost:hover{background:#f2f0ec;}
+
+  .footnote{margin-top:14px;color:var(--text-faint);font-size:11.5px;text-align:center;}
+
+  /* ---------- ekip yönetimi ---------- */
+  .memberadd{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 18px;}
+  .memberadd .mtitle{font-size:14px;font-weight:700;color:var(--text);}
+  .memberadd p{margin:5px 0 14px;font-size:13px;color:var(--text-muted);}
+  .memberadd .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .memberadd input, .memberadd select{height:40px;padding:0 12px;border:1px solid #cfcbc3;border-radius:8px;font-size:14px;background:var(--card);}
+  .memberadd input{flex:1;min-width:220px;}
+  .memberadd select{width:220px;}
+  .memberadd .addbtn2{height:40px;padding:0 20px;background:var(--text);border:1px solid var(--text);border-radius:8px;color:var(--card);font-size:14px;font-weight:600;}
+  .memberadd .addbtn2:hover{background:#332f2b;}
+
+  .memberlist{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+  .memberlist .mlhead{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--divider);}
+  .memberlist .mlhead .mtitle{font-size:14px;font-weight:700;color:var(--text);}
+  .memberlist .mlhead .mcount{font-size:12px;color:var(--text-faint);}
+  .mrow{display:grid;grid-template-columns:1fr 220px 100px;align-items:center;gap:8px;padding:12px 18px;border-bottom:1px solid #f0eee9;}
+  .mrow:last-child{border-bottom:none;}
+  .mrow.colhead{background:var(--kanban-bg);border-bottom:1px solid var(--divider);font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text-faint);}
+  .mrow .mmail{font-size:14px;color:var(--text);word-break:break-all;}
+  .mrow .mright{text-align:right;}
+  .roletag{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;background:var(--tcs-bg,#eceae5);border:1px solid var(--tcs-border,#cfcbc3);color:var(--tcs-text,#1a1917);}
+  .rmbtn{height:30px;padding:0 12px;background:var(--card);border:1px solid var(--danger-border);border-radius:7px;font-size:12px;font-weight:600;color:var(--will-label);}
+  .rmbtn:hover{background:var(--danger-bg);border-color:var(--will);}
+
+  @media (max-width:700px){
+    .mrow{grid-template-columns:1fr;gap:6px;}
+    .mrow .mright{text-align:left;}
+    .mrow.colhead{display:none;}
+  }
+</style>
+</head>
+<body>
+<div id="errbar" hidden></div>
+<div id="app"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  var TEAMS = [
+    {id:"etkinlik",   name:"Etkinlik ve Planlama", accent:"#6b4fbb", softBg:"#f1eefa", softBorder:"#d8cef0", softText:"#4a3487"},
+    {id:"onboarding", name:"Onboarding",           accent:"#1f6f8b", softBg:"#e8f1f5", softBorder:"#c5dde6", softText:"#175669"},
+    {id:"sponsorluk", name:"Sponsorluk",           accent:"#a1552b", softBg:"#f7ece4", softBorder:"#e6cdb9", softText:"#7d3f1d"},
+    {id:"developer",  name:"Developer",            accent:"#1e7a63", softBg:"#e5f2ee", softBorder:"#c2e0d6", softText:"#155c4a"}
+  ];
+  var TEAM_MAP = {}; TEAMS.forEach(function(t){ TEAM_MAP[t.id] = t; });
+  var STATUSES = ["will","progress","done"];
+  var STATUS_LABEL = {will:"Başlanacak", progress:"Devam Ediyor", done:"Tamamlandı"};
+
+  var sb = null;
+  var session = null;
+  var membership = null;
+  var tasksByTeam = {};
+  var activeTab = null;
+  var openForm = false;
+  var membersList = [];
+  var adminSubtab = "board";
+
+  var app = document.getElementById("app");
+
+  function escapeHtml(s){
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];
+    });
+  }
+  function relTime(iso){
+    if (!iso) return "";
+    var d = new Date(iso).getTime();
+    if (isNaN(d)) return "";
+    var s = Math.max(0, (Date.now() - d) / 1000);
+    if (s < 45) return "az önce";
+    if (s < 3600) return Math.round(s/60) + " dk önce";
+    if (s < 86400) return Math.round(s/3600) + " sa önce";
+    if (s < 86400*30) return Math.round(s/86400) + " gün önce";
+    return new Date(d).toLocaleDateString("tr-TR");
+  }
+
+  function showError(msg){
+    var bar = document.getElementById("errbar");
+    bar.textContent = "";
+    var span = document.createElement("span");
+    span.textContent = msg;
+    var btn = document.createElement("button");
+    btn.textContent = "✕";
+    btn.addEventListener("click", clearError);
+    bar.appendChild(span);
+    bar.appendChild(btn);
+    bar.hidden = false;
+  }
+  function clearError(){ var bar = document.getElementById("errbar"); bar.hidden = true; }
+
+  // ---------------- auth ----------------
+  async function init(){
+    if (!window.SUPABASE_URL || window.SUPABASE_URL === "YOUR_SUPABASE_URL") {
+      app.innerHTML = '<div class="center-screen"><div class="center-card"><h1>Kurulum eksik</h1><p>config.js dosyasına Supabase URL ve anon key girilmemiş.</p></div></div>';
+      return;
+    }
+    sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+    var got = await sb.auth.getSession();
+    session = got.data.session;
+    sb.auth.onAuthStateChange(function(_event, s){
+      session = s;
+      onSessionChange();
+    });
+    await onSessionChange();
+  }
+
+  async function onSessionChange(){
+    membership = null;
+    tasksByTeam = {};
+    if (session && session.user) {
+      var email = session.user.email;
+      var res = await sb.from("members").select("*").eq("email", email).maybeSingle();
+      if (res.error) { showError("Üyelik bilgisi okunamadı: " + res.error.message); }
+      membership = res.data || null;
+      if (membership) {
+        if (membership.role === "admin") {
+          activeTab = activeTab || TEAMS[0].id;
+          TEAMS.forEach(function(t){ subscribeTeam(t.id); });
+          loadMembers();
+        } else if (membership.team) {
+          subscribeTeam(membership.team);
+        }
+      }
+    }
+    render();
+  }
+
+  function signIn(){
+    sb.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin + window.location.pathname }
+    });
+  }
+  function signOut(){ sb.auth.signOut(); }
+
+  // ---------------- data: tasks ----------------
+  function refetchTeam(teamId){
+    return sb.from("tasks").select("*").eq("team", teamId).then(function(res){
+      if (res.error) { showError("Görevler okunamadı: " + res.error.message); return; }
+      tasksByTeam[teamId] = (res.data || []).sort(function(a,b){
+        return (b.updated_at||"").localeCompare(a.updated_at||"");
+      });
+      render();
+    });
+  }
+
+  var subscribed = {};
+  function subscribeTeam(teamId){
+    refetchTeam(teamId);
+    if (subscribed[teamId]) return;
+    subscribed[teamId] = true;
+    sb.channel("tasks-" + teamId)
+      .on("postgres_changes", {event:"*", schema:"public", table:"tasks", filter:"team=eq." + teamId}, function(){
+        refetchTeam(teamId);
+      })
+      .subscribe();
+  }
+
+  async function addTask(teamId, fields){
+    clearError();
+    var email = session.user.email;
+    var body = {
+      team: teamId,
+      title: fields.title.trim(),
+      description: (fields.description || "").trim(),
+      assignee: (fields.assignee || "").trim(),
+      status: "will",
+      created_by: email,
+      updated_by: email
+    };
+    var res = await sb.from("tasks").insert(body);
+    if (res.error) { showError("Görev eklenemedi: " + res.error.message); return false; }
+    await refetchTeam(teamId);
+    return true;
+  }
+
+  async function updateTask(teamId, taskId, patch){
+    clearError();
+    patch.updated_by = session.user.email;
+    patch.updated_at = new Date().toISOString();
+    var res = await sb.from("tasks").update(patch).eq("id", taskId);
+    if (res.error) { showError("Güncellenemedi: " + res.error.message); return; }
+    refetchTeam(teamId);
+  }
+
+  async function deleteTask(teamId, taskId){
+    clearError();
+    var res = await sb.from("tasks").delete().eq("id", taskId);
+    if (res.error) { showError("Silinemedi: " + res.error.message); return; }
+    refetchTeam(teamId);
+  }
+
+  // ---------------- data: members (admin) ----------------
+  async function loadMembers(){
+    var res = await sb.from("members").select("*").order("team", {nullsFirst:true});
+    if (res.error) { showError("Ekip listesi okunamadı: " + res.error.message); return; }
+    membersList = res.data || [];
+    render();
+  }
+
+  async function addMember(email, teamOrAdmin){
+    clearError();
+    if (!email) return;
+    var body = teamOrAdmin === "admin"
+      ? {email: email.trim().toLowerCase(), team: null, role: "admin"}
+      : {email: email.trim().toLowerCase(), team: teamOrAdmin, role: "lead"};
+    var res = await sb.from("members").upsert(body, {onConflict: "email"});
+    if (res.error) { showError("Eklenemedi: " + res.error.message); return; }
+    loadMembers();
+  }
+
+  async function removeMember(email){
+    clearError();
+    var res = await sb.from("members").delete().eq("email", email);
+    if (res.error) { showError("Silinemedi: " + res.error.message); return; }
+    loadMembers();
+  }
+
+  // ---------------- render: shared pieces ----------------
+  function teamStyleVars(teamId){
+    var t = TEAM_MAP[teamId];
+    if (!t) return "";
+    return "--tc:" + t.accent + ";--tcs-bg:" + t.softBg + ";--tcs-border:" + t.softBorder + ";--tcs-text:" + t.softText;
+  }
+
+  function topbarHtml(opts){
+    var email = session && session.user ? session.user.email : "";
+    var pillHtml = "";
+    if (opts.pillLabel) {
+      pillHtml = '<span class="rolepill"' + (opts.pillVars ? ' style="' + opts.pillVars + ';background:var(--tcs-bg);border-color:var(--tcs-border);color:var(--tcs-text)"' : '') + '>' + escapeHtml(opts.pillLabel) + '</span>';
+    }
+    return '<div class="topbar' + (opts.solo ? ' solo' : '') + '">' +
+      '<div class="brand"><div class="mark">YK</div>' +
+        '<div class="brand-text"><div class="title">YK Takip</div><div class="org">YTÜ Blockchain Topluluğu</div></div>' +
+        pillHtml +
+      '</div>' +
+      '<div class="whoami"><span class="email">' + escapeHtml(email) + '</span><button data-act="signout">Çıkış yap</button></div>' +
+    '</div>';
+  }
+
+  function cardHtml(teamId, t){
+    var style = teamStyleVars(teamId);
+    return '<div class="card' + (t.status==="done"?" done":"") + '" style="' + style + '" draggable="true" data-id="' + t.id + '" data-team="' + teamId + '">' +
+      '<div class="crow-top">' +
+        '<div class="ctitle">' + escapeHtml(t.title) + '</div>' +
+        '<button class="del" draggable="false" data-act="delete" data-team="' + teamId + '" data-id="' + t.id + '">Sil</button>' +
+      '</div>' +
+      (t.description ? '<p class="cdesc">' + escapeHtml(t.description) + '</p>' : '') +
+      (t.assignee ? '<div class="cassignee">Atanan: ' + escapeHtml(t.assignee) + '</div>' : '') +
+      '<div class="crow-bottom">' +
+        '<div class="meta mono">' + escapeHtml(t.updated_by||"") + ' · ' + relTime(t.updated_at) + '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function addFormHtml(teamId){
+    return '<div class="addform">' +
+      '<div class="flabel">Yeni görev</div>' +
+      '<input type="text" id="f_title" placeholder="Görev başlığı" />' +
+      '<textarea id="f_desc" rows="2" placeholder="Açıklama (opsiyonel)"></textarea>' +
+      '<input type="text" id="f_assignee" placeholder="Atanan kişi" />' +
+      '<div class="fbtns">' +
+        '<button class="btn primary" data-act="submitform" data-team="' + teamId + '">Ekle</button>' +
+        '<button class="btn ghost" data-act="cancelform">Vazgeç</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function kanbanHtml(teamId){
+    var style = teamStyleVars(teamId);
+    var list = tasksByTeam[teamId] || [];
+    var scVars = {will:"--sc:var(--will);--scl:var(--will-label)", progress:"--sc:var(--progress);--scl:var(--progress-label)", done:"--sc:var(--done);--scl:var(--done-label)"};
+    var cols = STATUSES.map(function(s){
+      var items = list.filter(function(t){ return t.status === s; });
+      var body = items.map(function(t){ return cardHtml(teamId, t); }).join("");
+      var addUi = "";
+      if (s === "will") {
+        addUi = openForm === teamId ? addFormHtml(teamId) : '<button class="addbtn" data-act="openform" data-team="' + teamId + '">+ Görev Ekle</button>';
+      }
+      var showEmpty = !body && !(s === "will" && openForm === teamId);
+      return '<div class="col" style="' + scVars[s] + '">' +
+        '<div class="col-head"><span class="dot"></span><span class="clabel">' + STATUS_LABEL[s] + '</span><span class="ccount mono">' + items.length + '</span></div>' +
+        (s === "will" ? addUi : "") +
+        '<div class="col-body" data-status="' + s + '" data-team="' + teamId + '">' +
+          body +
+          (showEmpty ? '<div class="empty-col">Buraya sürükle</div>' : "") +
+        '</div>' +
+      '</div>';
+    }).join("");
+    return '<div class="kanban" style="' + style + '">' + cols + '</div>';
+  }
+
+  function boardHtml(teamId){
+    var team = TEAM_MAP[teamId];
+    var style = teamStyleVars(teamId);
+    return '<div class="board">' +
+      '<div class="board-head" style="' + style + '">' +
+        '<span class="dot-sq"></span>' +
+        '<div class="name">' + escapeHtml(team.name) + '</div>' +
+        '<div class="meta mono">' + (tasksByTeam[teamId]||[]).length + ' görev</div>' +
+      '</div>' +
+      kanbanHtml(teamId) +
+    '</div>';
+  }
+
+  function summaryHtml(){
+    var cards = TEAMS.map(function(t){
+      var list = tasksByTeam[t.id] || [];
+      var c = {will:0, progress:0, done:0};
+      list.forEach(function(x){ if (c[x.status] != null) c[x.status]++; });
+      var total = c.will + c.progress + c.done || 1;
+      var isActive = activeTab === t.id;
+      return '<button class="team-card' + (isActive?' active':'') + '" style="' + teamStyleVars(t.id) + '" data-act="tab" data-team="' + t.id + '">' +
+        '<div class="tname">' + escapeHtml(t.name) + '</div>' +
+        '<div class="tcount mono">' + c.done + '/' + (c.will+c.progress+c.done) + ' tamamlandı</div>' +
+        '<div class="bar">' +
+          '<i style="width:' + (100*c.will/total) + '%;background:var(--will)"></i>' +
+          '<i style="width:' + (100*c.progress/total) + '%;background:var(--progress)"></i>' +
+          '<i style="width:' + (100*c.done/total) + '%;background:var(--done)"></i>' +
+        '</div>' +
+        '<div class="tstate">' + (isActive ? "Pano açık" : "Panoyu aç") + '</div>' +
+      '</button>';
+    }).join("");
+    return '<div class="summary">' + cards + '</div>';
+  }
+
+  function membersPanelHtml(){
+    var rows = membersList.map(function(m){
+      var team = m.role === "admin" ? null : TEAM_MAP[m.team];
+      var label = m.role === "admin" ? "Yönetim" : (team ? team.name : m.team);
+      var vars = m.role === "admin"
+        ? "--tcs-bg:#eceae5;--tcs-border:#cfcbc3;--tcs-text:#1a1917"
+        : (team ? teamStyleVars(team.id) : "");
+      return '<div class="mrow" style="' + vars + '">' +
+        '<div class="mmail">' + escapeHtml(m.email) + '</div>' +
+        '<div><span class="roletag">' + escapeHtml(label) + '</span></div>' +
+        '<div class="mright"><button class="rmbtn" data-act="rmmember" data-email="' + escapeHtml(m.email) + '">Kaldır</button></div>' +
+      '</div>';
+    }).join("");
+    var opts = TEAMS.map(function(t){ return '<option value="' + t.id + '">' + escapeHtml(t.name) + '</option>'; }).join("");
+    return '<div style="display:flex;flex-direction:column;gap:18px">' +
+      '<div class="memberadd">' +
+        '<div class="mtitle">Kişi ekle</div>' +
+        '<p>Mail adresini ekibe tanımla; kişi Google ile giriş yaptığında o ekibin panosunu görür.</p>' +
+        '<div class="row">' +
+          '<input type="email" id="m_email" placeholder="ornek.isim@ytublockchain.org" />' +
+          '<select id="m_role">' + opts + '<option value="admin">Yönetim (tüm panolar)</option></select>' +
+          '<button class="addbtn2" data-act="addmember">Ekle</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="memberlist">' +
+        '<div class="mlhead"><span class="mtitle">Tanımlı kişiler</span><span class="mcount mono">' + membersList.length + ' kişi</span></div>' +
+        '<div class="mrow colhead"><div>Mail</div><div>Ekip / Rol</div><div class="mright">İşlem</div></div>' +
+        (rows || '<div class="mrow"><div class="mmail">Henüz kimse eklenmedi.</div><div></div><div></div></div>') +
+      '</div>' +
+    '</div>';
+  }
+
+  // ---------------- render: top-level states ----------------
+  function renderLoading(){
+    app.innerHTML = '<div class="center-screen"><div class="center-card"><div class="mark">YK</div></div></div>';
+  }
+
+  var GOOGLE_ICON = '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.6 30.2.5 24 .5 14.6.5 6.5 5.9 2.6 13.8l7.8 6.1C12.3 14 17.6 9.5 24 9.5z"></path><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-2.8-.4-4.1H24v8.1h12.7c-.3 2.1-1.6 5.3-4.7 7.4l7.6 5.9c4.5-4.2 6.9-10.3 6.9-17.3z"></path><path fill="#FBBC05" d="M10.4 28.1c-.5-1.5-.8-3.1-.8-4.6s.3-3.1.8-4.6l-7.8-6.1C1 16.1 0 19.9 0 23.5s1 7.4 2.6 10.7l7.8-6.1z"></path><path fill="#34A853" d="M24 47.5c6.2 0 11.5-2.1 15.6-5.7l-7.6-5.9c-2 1.4-4.7 2.4-8 2.4-6.4 0-11.7-4.5-13.6-10.4l-7.8 6.1C6.5 41.1 14.6 47.5 24 47.5z"></path></svg>';
+
+  function renderLogin(){
+    app.innerHTML = '<div class="center-screen"><div class="center-card">' +
+      '<div class="mark">YK</div>' +
+      '<h1>YK Takip</h1>' +
+      '<p>YTÜ Blockchain Topluluğu yönetim kurulu görev takip panosu. Topluluk mailinle giriş yap, ekibinin panosu otomatik açılır.</p>' +
+      '<button class="glogin" data-act="signin">' + GOOGLE_ICON + 'Google ile giriş yap</button>' +
+      '<div class="caption mono">Yalnızca yönetim kuruluna tanımlı mailler</div>' +
+    '</div></div>';
+  }
+
+  function renderUnassigned(){
+    var email = session.user.email;
+    app.innerHTML = '<div class="center-screen"><div class="center-card">' +
+      '<div class="mark">YK</div>' +
+      '<h1>Henüz atanmadın</h1>' +
+      '<p>Bu mail hesabı bir ekibe atanmamış:</p>' +
+      '<div class="mailtag mono">' + escapeHtml(email) + '</div>' +
+      '<p>Başkan veya başkan yardımcısına bu mail adresini iletip ekibine eklenmeni iste.</p>' +
+      '<button class="linkbtn" data-act="signout">Farklı hesapla dene</button>' +
+    '</div></div>';
+  }
+
+  function renderLead(){
+    var team = TEAM_MAP[membership.team];
+    app.innerHTML = topbarHtml({solo:true, pillLabel: team.name + " ekibi", pillVars: teamStyleVars(team.id)}) +
+      '<div class="panelbody notabs">' + boardHtml(membership.team) + '</div>' +
+      '<div class="footnote">Bu pano yalnızca ' + escapeHtml(team.name) + ' ekibine ait — başka ekipler görmüyor.</div>';
+  }
+
+  function renderAdmin(){
+    var html = topbarHtml({pillLabel:"Yönetim"});
+    html += '<div class="tabs">' +
+      '<button class="' + (adminSubtab==="board"?"active":"") + '" data-act="subtab" data-tab="board">Panolar</button>' +
+      '<button class="' + (adminSubtab==="members"?"active":"") + '" data-act="subtab" data-tab="members">Ekip Yönetimi</button>' +
+    '</div>';
+    html += '<div class="panelbody">';
+    if (adminSubtab === "members") {
+      html += membersPanelHtml();
+    } else {
+      html += summaryHtml() + boardHtml(activeTab);
+    }
+    html += '</div>';
+    html += '<div class="footnote">Yönetim görünümü — tüm ekipleri görüyor ve görev atayabiliyorsun.</div>';
+    app.innerHTML = html;
+  }
+
+  // ---------------- top-level render + bind ----------------
+  function render(){
+    if (!sb) { renderLoading(); return; }
+    if (!session) { renderLogin(); bindGlobal(); return; }
+    if (!membership) { renderUnassigned(); bindGlobal(); return; }
+    if (membership.role === "admin") renderAdmin();
+    else renderLead();
+    bindGlobal();
+    bindBoard();
+  }
+
+  function bindGlobal(){
+    var si = app.querySelector('[data-act="signin"]');
+    if (si) si.addEventListener("click", signIn);
+    app.querySelectorAll('[data-act="signout"]').forEach(function(el){
+      el.addEventListener("click", signOut);
+    });
+    app.querySelectorAll('[data-act="subtab"]').forEach(function(el){
+      el.addEventListener("click", function(){ adminSubtab = el.getAttribute("data-tab"); render(); });
+    });
+    app.querySelectorAll('[data-act="tab"]').forEach(function(el){
+      el.addEventListener("click", function(){ activeTab = el.getAttribute("data-team"); openForm = false; render(); });
+    });
+    var addM = app.querySelector('[data-act="addmember"]');
+    if (addM) addM.addEventListener("click", function(){
+      var email = document.getElementById("m_email").value.trim();
+      var role = document.getElementById("m_role").value;
+      if (!email) return;
+      addMember(email, role);
+      document.getElementById("m_email").value = "";
+    });
+    app.querySelectorAll('[data-act="rmmember"]').forEach(function(el){
+      el.addEventListener("click", function(){ removeMember(el.getAttribute("data-email")); });
+    });
+  }
+
+  function bindBoard(){
+    app.querySelectorAll('.card[draggable="true"]').forEach(function(el){
+      el.addEventListener("dragstart", function(e){
+        e.dataTransfer.setData("text/plain", el.getAttribute("data-id"));
+        e.dataTransfer.effectAllowed = "move";
+        el.classList.add("dragging");
+      });
+      el.addEventListener("dragend", function(){ el.classList.remove("dragging"); });
+    });
+    app.querySelectorAll(".col-body").forEach(function(el){
+      el.addEventListener("dragover", function(e){ e.preventDefault(); el.classList.add("dragover"); });
+      el.addEventListener("dragleave", function(){ el.classList.remove("dragover"); });
+      el.addEventListener("drop", function(e){
+        e.preventDefault();
+        el.classList.remove("dragover");
+        var taskId = e.dataTransfer.getData("text/plain");
+        if (!taskId) return;
+        var teamId = el.getAttribute("data-team");
+        var status = el.getAttribute("data-status");
+        var current = (tasksByTeam[teamId] || []).find(function(t){ return String(t.id) === String(taskId); });
+        if (current && current.status !== status) {
+          updateTask(teamId, taskId, {status: status});
+        }
+      });
+    });
+    app.querySelectorAll('[data-act="delete"]').forEach(function(el){
+      el.addEventListener("click", function(){ deleteTask(el.getAttribute("data-team"), el.getAttribute("data-id")); });
+    });
+    app.querySelectorAll('[data-act="openform"]').forEach(function(el){
+      el.addEventListener("click", function(){
+        openForm = el.getAttribute("data-team");
+        render();
+        var t = document.getElementById("f_title");
+        if (t) t.focus();
+      });
+    });
+    app.querySelectorAll('[data-act="cancelform"]').forEach(function(el){
+      el.addEventListener("click", function(){ openForm = false; render(); });
+    });
+    app.querySelectorAll('[data-act="submitform"]').forEach(function(el){
+      el.addEventListener("click", async function(){
+        var title = document.getElementById("f_title").value.trim();
+        if (!title) return;
+        var teamId = el.getAttribute("data-team");
+        el.disabled = true;
+        var ok = await addTask(teamId, {
+          title: title,
+          description: document.getElementById("f_desc").value,
+          assignee: document.getElementById("f_assignee").value
+        });
+        el.disabled = false;
+        if (ok) { openForm = false; render(); }
+      });
+    });
+  }
+
+  render();
+  init();
+})();
+</script>
+</body>
+</html>
