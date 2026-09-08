@@ -1,3 +1,3 @@
 // Supabase proje bilgilerini buraya yapıştır (Supabase Dashboard -> Settings -> API)
-window.SUPABASE_URL = "https://xgyvfxnhhovajttiqzwp.supabase.co";
-window.SUPABASE_ANON_KEY = "sb_publishable_2bc0Aug0liqqA7SYOMdqxQ_nWKCxlF2";
+window.SUPABASE_URL = "https://nysvfnexscvjqgrsmusw.supabase.co";
+window.SUPABASE_ANON_KEY = "sb_publishable_XHZ-oNFU0lgf625cP9V5Lg_bqbNqTPS";
