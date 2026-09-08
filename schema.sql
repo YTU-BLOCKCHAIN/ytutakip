@@ -14,11 +14,19 @@ create table if not exists tasks (
   description text default '',
   assignee text default '',
   status text not null default 'will' check (status in ('will','progress','done')),
+  progress_note text default '',
+  outcome text default '',
+  needs_review boolean not null default false,
   created_by text,
   updated_by text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- daha önce oluşturulmuş bir tasks tablosu varsa bu üç sütunu ekler (yoksa dokunmaz)
+alter table tasks add column if not exists progress_note text default '';
+alter table tasks add column if not exists outcome text default '';
+alter table tasks add column if not exists needs_review boolean not null default false;
 
 alter table members enable row level security;
 alter table tasks enable row level security;
