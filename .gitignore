@@ -1,3 +1,5 @@
 google-oauth-credentials.txt
 .netlify/
 .DS_Store
+.vercel
+.env*

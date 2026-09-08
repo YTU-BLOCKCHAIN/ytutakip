@@ -92,11 +92,12 @@ create policy "tasks_delete" on tasks for delete
 -- canlı güncellemeler için (birisi görev eklediğinde diğerleri anında görsün)
 alter publication supabase_realtime add table tasks;
 
--- ekip üyeleri (verdiğin mail listesi)
-insert into members (email, team, role) values
-  ('REDACTED_EMAIL', null, 'admin'),
-  ('REDACTED_EMAIL', 'onboarding', 'lead'),
-  ('REDACTED_EMAIL', 'sponsorluk', 'lead'),
-  ('REDACTED_EMAIL', 'etkinlik', 'lead'),
-  ('REDACTED_EMAIL', 'developer', 'lead')
-on conflict (email) do update set team = excluded.team, role = excluded.role;
+-- ekip üyeleri: bu bloğu repoya commit etmeyin, sadece kendi Supabase
+-- SQL Editor'ünüzde gerçek mail adresleriyle elle çalıştırın.
+-- insert into members (email, team, role) values
+--   ('admin@ornek.org', null, 'admin'),
+--   ('lead1@ornek.org', 'onboarding', 'lead'),
+--   ('lead2@ornek.org', 'sponsorluk', 'lead'),
+--   ('lead3@ornek.org', 'etkinlik', 'lead'),
+--   ('lead4@ornek.org', 'developer', 'lead')
+-- on conflict (email) do update set team = excluded.team, role = excluded.role;
