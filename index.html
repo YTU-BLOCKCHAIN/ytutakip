@@ -409,13 +409,9 @@
       if (res.error) { showError("Üyelik bilgisi okunamadı: " + res.error.message); }
       membership = res.data || null;
       if (membership) {
-        if (membership.role === "admin") {
-          activeTab = activeTab || TEAMS[0].id;
-          TEAMS.forEach(function(t){ subscribeTeam(t.id); });
-          loadMembers();
-        } else if (membership.team) {
-          subscribeTeam(membership.team);
-        }
+        activeTab = activeTab || (TEAM_MAP[membership.team] ? membership.team : TEAMS[0].id);
+        TEAMS.forEach(function(t){ subscribeTeam(t.id); });
+        if (membership.role === "admin") loadMembers();
       }
     }
     render();
@@ -694,10 +690,10 @@
     return '<div style="display:flex;flex-direction:column;gap:18px">' +
       '<div class="memberadd">' +
         '<div class="mtitle">Kişi ekle</div>' +
-        '<p>Mail adresini ekibe tanımla; kişi Google ile giriş yaptığında o ekibin panosunu görür.</p>' +
+        '<p>Mail adresini ekibe tanımla; kişi Google ile giriş yaptığında önce kendi ekibinin panosu açılır, diğer ekiplere de üstteki kartlardan geçebilir.</p>' +
         '<div class="row">' +
           '<input type="email" id="m_email" placeholder="ornek.isim@ytublockchain.org" />' +
-          '<select id="m_role">' + opts + '<option value="admin">Yönetim (tüm panolar)</option></select>' +
+          '<select id="m_role">' + opts + '<option value="admin">Yönetim (ekip yönetimi yetkili)</option></select>' +
           '<button class="addbtn2" data-act="addmember">Ekle</button>' +
         '</div>' +
       '</div>' +
@@ -740,9 +736,9 @@
 
   function renderLead(){
     var team = TEAM_MAP[membership.team];
-    app.innerHTML = topbarHtml({solo:true, pillLabel: team.name + " ekibi", pillVars: teamStyleVars(team.id), rootVars: teamStyleVars(team.id)}) +
-      '<div class="panelbody notabs">' + boardHtml(membership.team) + '</div>' +
-      '<div class="footnote">Bu pano yalnızca ' + escapeHtml(team.name) + ' ekibine ait — başka ekipler görmüyor.</div>';
+    app.innerHTML = topbarHtml(team ? {pillLabel: team.name + " ekibi", pillVars: teamStyleVars(team.id)} : {}) +
+      '<div class="panelbody notabs">' + summaryHtml() + boardHtml(activeTab) + '</div>' +
+      '<div class="footnote">Tüm ekiplerin panolarını görebilir, görev ekleyip güncelleyebilirsin.</div>';
   }
 
   function renderAdmin(){

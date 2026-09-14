@@ -45,15 +45,18 @@ as $$
   );
 $$;
 
--- giriş yapan kişinin ekibi
-create or replace function my_team()
-returns text
+-- giriş yapan kişi herhangi bir ekibe (ya da yönetime) tanımlı mı?
+create or replace function is_member()
+returns boolean
 language sql
 security definer
 set search_path = public
 stable
 as $$
-  select team from members where email = auth.jwt() ->> 'email' limit 1;
+  select exists(
+    select 1 from members m
+    where m.email = auth.jwt() ->> 'email'
+  );
 $$;
 
 drop policy if exists "members_select" on members;
@@ -72,25 +75,35 @@ drop policy if exists "members_delete" on members;
 create policy "members_delete" on members for delete
   using (is_admin());
 
+-- tanımlı her kişi tüm ekiplerin panolarını görebilir ve düzenleyebilir
 drop policy if exists "tasks_select" on tasks;
 create policy "tasks_select" on tasks for select
-  using (is_admin() or team = my_team());
+  using (is_member());
 
 drop policy if exists "tasks_insert" on tasks;
 create policy "tasks_insert" on tasks for insert
-  with check (is_admin() or team = my_team());
+  with check (is_member());
 
 drop policy if exists "tasks_update" on tasks;
 create policy "tasks_update" on tasks for update
-  using (is_admin() or team = my_team())
-  with check (is_admin() or team = my_team());
+  using (is_member())
+  with check (is_member());
 
 drop policy if exists "tasks_delete" on tasks;
 create policy "tasks_delete" on tasks for delete
-  using (is_admin() or team = my_team());
+  using (is_member());
 
 -- canlı güncellemeler için (birisi görev eklediğinde diğerleri anında görsün)
-alter publication supabase_realtime add table tasks;
+-- tekrar çalıştırıldığında hata vermemesi için önce ekli mi diye bakar
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'tasks'
+  ) then
+    alter publication supabase_realtime add table tasks;
+  end if;
+end $$;
 
 -- ekip üyeleri: bu bloğu repoya commit etmeyin, sadece kendi Supabase
 -- SQL Editor'ünüzde gerçek mail adresleriyle elle çalıştırın.
